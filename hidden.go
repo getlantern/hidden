@@ -11,8 +11,15 @@ import (
 	"github.com/getlantern/hex"
 )
 
-// 16 non-printing characters
-const hextable = "\x01\x02\x03\x04\x05\x06\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17"
+const (
+	// 16 non-printing characters
+	hextable = "\x01\x02\x03\x04\x05\x06\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17"
+
+	null = '\x00'
+	hex1 = '\x06'
+	hex2 = '\x0e'
+	hex3 = '\x17'
+)
 
 var (
 	hexencoding = hex.NewEncoding(hextable)
@@ -60,7 +67,14 @@ func Extract(str string) ([][]byte, error) {
 	return result, nil
 }
 
-// Clean removes any hidden data from an arbitrary string.
+// Clean removes all control characters that might be encoding hidden data from a given string.
 func Clean(str string) string {
-	return re.ReplaceAllString(str, "")
+	result := make([]byte, 0, len(str))
+	for _, b := range []byte(str) {
+		isNotHidden := b > hex3 || (b > hex1 && b < hex2)
+		if isNotHidden {
+			result = append(result, b)
+		}
+	}
+	return string(result)
 }
